@@ -1,4 +1,5 @@
 import base64
+import bcrypt
 import cv2 as cv
 import flask
 import io
@@ -40,7 +41,7 @@ def create_app():
     
     @app.route('/')
     def index():
-        return flask.send_from_directory(build_path, 'index.html')
+        return flask.send_from_directory(app.static_folder, 'index.html')
     
     @app.route('/<path:path>')
     def serve_frontend(path):
