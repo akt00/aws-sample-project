@@ -113,7 +113,9 @@ def create_app():
     return app
 
 
+app = create_app()
+
+
 if __name__ == '__main__':
-    runner = create_app()
-    runner.run()
+    app.run()
     
