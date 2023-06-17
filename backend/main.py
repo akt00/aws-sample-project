@@ -205,6 +205,7 @@ def create_app():
 
         if username is not None and session_id is not None:
             res = dynamo.delete_item(
+                TableName='Session',
                 Key={
                     'session_id': {
                         'S': session_id
