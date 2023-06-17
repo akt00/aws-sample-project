@@ -107,8 +107,22 @@ def create_app():
         if 'Item' in query_res:
             query_res = query_res['Item']
             hashed_pwd: bytearray = str(query_res.get('password')).encode()
+            print('hashed_pwd', hashed_pwd)
             if bcrypt.checkpw(password.encode(), hashed_pwd):
                 session_id = str(uuid.uuid4())
+
+                _ = dynamo.put_item(
+                    TableName='Session',
+                    Item={
+                        'session_id': {
+                            'S': session_id
+                        },
+                        'username': {
+                            'S': username
+,                        }
+                    },
+                )
+                
                 res = flask.make_response(flask.jsonify({'message': 'OK'}), 200)
                 res.set_cookie('username', username)
                 res.set_cookie('session', session_id)
