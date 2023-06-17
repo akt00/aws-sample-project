@@ -12,7 +12,7 @@ sudo yum install -y git
 
 ### 2. Clone the repository
 ```rb
-git clone https https://github.com/akt00/aws-sample-project.git
+git clone https://github.com/akt00/aws-sample-project.git
 ```
 
 ### 3. Run the bash script in the root directory
