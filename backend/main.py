@@ -221,11 +221,10 @@ def create_app():
 
     @app.route('/inference', methods=['POST'])
     def inference():
-        # s3 = boto3.client('s3')
-        # s3_bucket = 'aws-sample-project'
+        s3 = boto3.client('s3')
+        s3_bucket = 'aws-sample-project'
         
-        # dynamo = boto3.resource('dynamodb', region_name='us-east-1')
-        
+        dynamo = boto3.client('dynamodb', region_name=aws_region)
 
         data = flask.request.get_json()
         user_name = flask.request.cookies.get('username')
@@ -246,7 +245,7 @@ def create_app():
         image_io.seek(0)
         image_png = image_io.getvalue()
 
-        # s3.put_object(Body=image_png, Bucket=s3_bucket, Key=str(user_name) + str(uuid.uuid4()) + '.png')
+        _ = s3.put_object(Body=image_png, Bucket=s3_bucket, Key=str(user_name) + str(uuid.uuid4()) + '.png')
         # inference
         res = model.predict(image_np)
         labels = res[0].boxes.xywh.to('cpu').numpy()
