@@ -72,7 +72,7 @@ def create_app():
             if query_res.get('session_id') is not None or query_res.get('username') is not None:
                 return flask.redirect('https://aws-project-akt00.com/content', code=302)
             
-            return flask.send_from_directory(app.static_folder, 'index.html')
+        return flask.send_from_directory(app.static_folder, 'index.html')
     
 
     @app.route('/<path:path>')
@@ -167,7 +167,7 @@ def create_app():
                 'username': {
                     'S': username
                 },
-                'password': {
+                'session_id': {
                     'S': sessino_id
                 },
             }
@@ -178,7 +178,7 @@ def create_app():
         res.set_cookie('session', sessino_id)
         return res
     
-    
+
     @app.route('/inference', methods=['POST'])
     def inference():
         # s3 = boto3.client('s3')
