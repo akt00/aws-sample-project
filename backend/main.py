@@ -140,7 +140,9 @@ def create_app():
         )
 
         if 'Item'in query_res:
-            pass
+            username = query_res['Item'].get('username')
+            if username is not None:
+                return flask.make_response(flask.jsonify({'message': 'Sign-up failed'}), 401)
 
         salt = bcrypt.gensalt()
         hashed_password: str = bcrypt.hashpw(password.encode(), salt).decode()
@@ -157,12 +159,26 @@ def create_app():
             }
         )
 
+        sessino_id = str(uuid.uuid4())
+
+        _ = dynamo.put_item(
+            TableName='Session',
+            Item={
+                'username': {
+                    'S': username
+                },
+                'password': {
+                    'S': sessino_id
+                },
+            }
+        )
+
         res = flask.make_response(flask.jsonify({'message': 'OK'}), 200)
         res.set_cookie('username', user_data['username'])
-        res.set_cookie('session', str(uuid.uuid4()))
+        res.set_cookie('session', sessino_id)
         return res
     
-
+    
     @app.route('/inference', methods=['POST'])
     def inference():
         # s3 = boto3.client('s3')
