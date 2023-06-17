@@ -13,6 +13,7 @@ import uuid
 
 def create_app():
     app = flask.Flask(__name__)
+    aws_region = os.getenv('AWS_REGION') if os.getenv('AWS_REGION') else 'us-east-1'
     build_path = '../frontend/dist'
     app.static_folder = build_path
     model = YOLO('yolov8n.pt')
@@ -42,7 +43,20 @@ def create_app():
     
     @app.route('/')
     def index():
-        # return flask.redirect('https://aws-project-akt00.com/content', code=302) 
+        dynamo = boto3.resource('dynamodb', region_name=aws_region)
+        session_table = dynamo.Table('Session')
+
+        user_name = flask.request.cookies.get('username')
+        session_id = flask.request.cookies.get('session')
+        
+        res = session_table.get_item(
+            Item={'username': user_name}
+            )
+        
+        if 'Item' in res and str(session_id) == str(res['Item'].get('session_id')):
+            return flask.redirect('https://aws-project-akt00.com/content', code=302)
+
+
         return flask.send_from_directory(app.static_folder, 'index.html')
     
     @app.route('/<path:path>')
@@ -83,10 +97,10 @@ def create_app():
     
     @app.route('/inference', methods=['POST'])
     def inference():
-        s3 = boto3.client('s3')
-        s3_bucket = 'aws-sample-project'
+        # s3 = boto3.client('s3')
+        # s3_bucket = 'aws-sample-project'
         
-        dynamo = boto3.resource('dynamodb', region_name='us-east-1')
+        # dynamo = boto3.resource('dynamodb', region_name='us-east-1')
         
 
         data = flask.request.get_json()
@@ -108,7 +122,7 @@ def create_app():
         image_io.seek(0)
         image_png = image_io.getvalue()
 
-        s3.put_object(Body=image_png, Bucket=s3_bucket, Key=str(user_name) + str(uuid.uuid4()) + '.png')
+        # s3.put_object(Body=image_png, Bucket=s3_bucket, Key=str(user_name) + str(uuid.uuid4()) + '.png')
         # inference
         res = model.predict(image_np)
         labels = res[0].boxes.xywh.to('cpu').numpy()
