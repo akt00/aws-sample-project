@@ -50,14 +50,13 @@ def create_app():
         session_id = flask.request.cookies.get('session')
         
         res = session_table.get_item(
-            Item={'username': user_name}
+            Key={'username': user_name}
             )
         
         if 'Item' in res and str(session_id) == str(res['Item'].get('session_id')):
             return flask.redirect('https://aws-project-akt00.com/content', code=302)
-
-
-        return flask.send_from_directory(app.static_folder, 'index.html')
+        else:
+            return flask.send_from_directory(app.static_folder, 'index.html')
     
     @app.route('/<path:path>')
     def serve_frontend(path):
