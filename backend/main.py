@@ -11,6 +11,7 @@ from ultralytics import YOLO
 import uuid
 
 
+# factory module
 def create_app():
     app = flask.Flask(__name__)
     aws_region = os.getenv('AWS_REGION') if os.getenv('AWS_REGION') else 'us-east-1'
@@ -18,7 +19,7 @@ def create_app():
     app.static_folder = build_path
     model = YOLO('yolov8n.pt')
     
-    
+
     def xywh_to_p1p2(xywh: tuple) -> tuple:
         """
         :param xywh: un-normalized coords and length of xywh
@@ -46,69 +47,110 @@ def create_app():
 
     @app.route('/')
     def index():
-        # dynamo = boto3.resource('dynamodb', region_name=aws_region)
-        # session_table = dynamo.Table('Session')
+        """
+        The default http route. Redicrects users to content page if a valid session token is present
+        """
         dynamo = boto3.client('dynamodb', region_name=aws_region)
-        user_name = str(flask.request.cookies.get('username'))
+        username = str(flask.request.cookies.get('username'))
         session_id = str(flask.request.cookies.get('session'))
         
-        res = dynamo.get_item(
+        query_res = dynamo.get_item(
             TableName='Session',
             Key={
                 'username': {
-                    'S': user_name,
+                    'S': username,
                     },
                 'session_id': {
                     'S': session_id
                     },
             }
             )
-        if 'Item' in res:
-            res = res['Item']
-            if res.get('session_id') is None or res.get('username') is None:
-                return flask.send_from_directory(app.static_folder, 'index.html')
-            else:
+        
+        if 'Item' in query_res:
+            query_res = query_res['Item']
+
+            if query_res.get('session_id') is not None or query_res.get('username') is not None:
                 return flask.redirect('https://aws-project-akt00.com/content', code=302)
-        else:
+            
             return flask.send_from_directory(app.static_folder, 'index.html')
     
 
     @app.route('/<path:path>')
-    def serve_frontend(path):
-        user_name = flask.request.cookies.get('username')
-        session_id = flask.request.cookies.get('session')
-        print(user_name, session_id)
+    def serve_static(path):
+        """
+        Servers the static content. Stays in the same page on reload
+        """
         if path != "" and os.path.exists(app.static_folder + '/' + path):
             return flask.send_from_directory(app.static_folder, path)
         else:
             return flask.send_from_directory(app.static_folder, 'index.html')
     
+
     @app.route('/login', methods=['POST'])
     def user_login():
+        dynamo = boto3.client('dynamodb', region_name=aws_region)
+
         user_data = flask.request.get_json()
         # print(user_data)
-        user_name = user_data['username']
-        user_passwd = user_data['password']
+        username = str(user_data['username'])
+        password = str(user_data['password'])
 
-        res = flask.make_response(flask.jsonify({'message': 'OK'}), 404)
-        res.set_cookie('username', user_data['username'])
-        res.set_cookie('session', str(uuid.uuid4()))
-        return res
+        query_res = dynamo.get_item(
+            TableName='Users',
+            Key={
+                'username': {
+                    'S': username
+                },
+            }
+        )
+
+        if 'Item' in query_res:
+            query_res = query_res['Item']
+            hashed_pwd: bytearray = str(query_res.get('password')).encode()
+            if bcrypt.checkpw(password.encode(), hashed_pwd):
+                session_id = str(uuid.uuid4())
+                res = flask.make_response(flask.jsonify({'message': 'OK'}), 401)
+                res.set_cookie('username', username)
+                res.set_cookie('session', session_id)
+                return res
+            else:
+                return flask.make_response(flask.jsonify({'message': 'Login failed'}), 401)
+        else:
+            res = flask.make_response(flask.jsonify({'message': 'An error occured'}), 500)
+            return res
+        
     
+
     @app.route('/signup', methods=['POST'])
     def user_signup():
-        dynamo = boto3.resource('dynamodb', region_name='us-east-1')
+        dynamo = boto3.client('dynamodb', region_name=aws_region)
 
         user_data = flask.request.get_json()
         # print(user_data)
-        user_name = user_data['username']
-        user_passwd = user_data['password']
+        username = user_data['username']
+        password = user_data['password']
+
+        salt = bcrypt.gensalt()
+        hashed_password: str = bcrypt.hashpw(password.encode(), salt).decode()
+
+        _ = dynamo.put_item(
+            TableName='Users',
+            Item={
+                'username': {
+                    'S': username
+                },
+                'password': {
+                    'S': hashed_password
+                },
+            }
+        )
 
         res = flask.make_response(flask.jsonify({'message': 'OK'}), 200)
         res.set_cookie('username', user_data['username'])
         res.set_cookie('session', str(uuid.uuid4()))
         return res
     
+
     @app.route('/inference', methods=['POST'])
     def inference():
         # s3 = boto3.client('s3')
@@ -156,12 +198,12 @@ def create_app():
 
         return flask.jsonify({'image': image_str}), 200
     
+
     return app
 
 
-app = create_app()
-
 
 if __name__ == '__main__':
-    app.run()
+    runner = create_app()
+    runner.run()
     
