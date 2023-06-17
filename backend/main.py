@@ -109,7 +109,7 @@ def create_app():
             hashed_pwd: bytearray = str(query_res.get('password')).encode()
             if bcrypt.checkpw(password.encode(), hashed_pwd):
                 session_id = str(uuid.uuid4())
-                res = flask.make_response(flask.jsonify({'message': 'OK'}), 401)
+                res = flask.make_response(flask.jsonify({'message': 'OK'}), 200)
                 res.set_cookie('username', username)
                 res.set_cookie('session', session_id)
                 return res
@@ -129,6 +129,18 @@ def create_app():
         # print(user_data)
         username = user_data['username']
         password = user_data['password']
+
+        query_res = dynamo.get_item(
+            TableName='Users',
+            Key={
+                'username': {
+                    'S': username
+                },
+            }
+        )
+
+        if 'Item'in query_res:
+            pass
 
         salt = bcrypt.gensalt()
         hashed_password: str = bcrypt.hashpw(password.encode(), salt).decode()

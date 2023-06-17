@@ -37,3 +37,14 @@ res = dynamo.put_item(
 )
 
 print(res)
+
+res = dynamo.get_item(
+    TableName='Users',
+    Item={
+        'username': {
+            'S': 'admin'
+        },
+    }
+)
+
+print(res)
