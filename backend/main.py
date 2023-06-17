@@ -42,8 +42,8 @@ def create_app():
     
     @app.route('/')
     def index():
-        return flask.redirect('https://aws-project-akt00.com/content', code=302) 
-        # return flask.send_from_directory(app.static_folder, 'index.html')
+        # return flask.redirect('https://aws-project-akt00.com/content', code=302) 
+        return flask.send_from_directory(app.static_folder, 'index.html')
     
     @app.route('/<path:path>')
     def serve_frontend(path):
@@ -62,7 +62,7 @@ def create_app():
         user_name = user_data['username']
         user_passwd = user_data['password']
 
-        res = flask.make_response(flask.jsonify({'message': 'OK'}), 200)
+        res = flask.make_response(flask.jsonify({'message': 'OK'}), 404)
         res.set_cookie('username', user_data['username'])
         res.set_cookie('session', str(uuid.uuid4()))
         return res
