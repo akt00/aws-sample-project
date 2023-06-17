@@ -1,5 +1,6 @@
 import base64
 import bcrypt
+import boto3
 import cv2 as cv
 import flask
 import io
@@ -52,7 +53,6 @@ def create_app():
             return flask.send_from_directory(app.static_folder, path)
         else:
             return flask.send_from_directory(app.static_folder, 'index.html')
-
     
     @app.route('/login', methods=['POST'])
     def user_login():
@@ -80,6 +80,11 @@ def create_app():
     
     @app.route('/inference', methods=['POST'])
     def inference():
+        s3 = boto3.client('s3')
+        s3_bucket = 'aws-sample-project'
+        dynamo = boto3.resource('dynamodb', region_name='us-east-1')
+        
+
         data = flask.request.get_json()
         user_name = flask.request.cookies.get('username')
         session_id = flask.request.cookies.get('session')
@@ -107,6 +112,7 @@ def create_app():
         image.save(image_io, format='PNG')
         image_io.seek(0)
         image_png = image_io.getvalue()
+        s3.put_object(Body=image_png, bucket=s3_bucket, Key=str(user_name) + str(uuid.uuid4()))
         image_str = base64.b64encode(image_png).decode('utf-8')
         return flask.jsonify({'image': image_str}), 200
     
