@@ -2,6 +2,7 @@ import base64
 import bcrypt
 import boto3
 import cv2 as cv
+from datetime import datetime
 import flask
 import io
 import numpy as np
@@ -246,8 +247,15 @@ def create_app():
             }
         )
 
-        print(query_res)
-
+        # print(query_res)
+        if 'Item' in query_res:
+            _session_id: str = query_res['Item'].get('session_id')['S']
+            _username: str = query_res['Item'].get('username')['S']
+            if username != _username or session_id != _session_id:
+                return flask.make_response(flask.jsonify({'message': 'invalid session credentials'}), 401)
+        else:
+            return flask.make_response(flask.jsonify({'message': 'failed to validate session'}), 500)
+        
         image_data = data['image']
         # remove prefix:image/jpeg;base64, data
         image_data = image_data.split(',')[1]
@@ -264,12 +272,35 @@ def create_app():
         image_io.seek(0)
         image_png = image_io.getvalue()
 
-        _ = s3.put_object(Body=image_png, Bucket=s3_bucket, Key=str(user_name) + str(uuid.uuid4()) + '.png')
+        object_path = username + str(uuid.uuid4()) + '.png'
+        _ = s3.put_object(Body=image_png, Bucket=s3_bucket, Key=object_path)
         # inference
         res = model.predict(image_np)
         labels = res[0].boxes.xywh.to('cpu').numpy()
         # print(labels.shape)
         assert labels.ndim == 2
+
+        
+        now = datetime.now()
+        timestamp = str(now.strftime('%Y-%M-%D %H:%M:%S'))
+
+        _ = dynamo.put_item(
+            TableName='Inferences',
+            Item={
+                'username': {
+                    'S': username
+                },
+                'timestamp': {
+                    'S': timestamp
+                },
+                'object_path': {
+                    'S': object_path 
+                },
+                'prection': {
+                    'S': str(labels.tolist())
+                }
+            }
+        )
 
         image_np = draw_bbox(image_np, labels)
         image_np = cv.cvtColor(image_np, cv.COLOR_BGR2RGB)
