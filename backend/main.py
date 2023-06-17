@@ -198,10 +198,9 @@ def create_app():
     def user_logout():
         dynamo = boto3.client('dynamodb', region_name=aws_region)
 
-        username = flask.request.cookies.get('username')
-        session_id = flask.request.cookies.get('session')
-
-        print(username, session_id)
+        username: str = flask.request.cookies.get('username')
+        session_id: str = flask.request.cookies.get('session')
+        # print(username, session_id)
 
         if username is not None and session_id is not None:
             res = dynamo.delete_item(
@@ -227,8 +226,28 @@ def create_app():
         dynamo = boto3.client('dynamodb', region_name=aws_region)
 
         data = flask.request.get_json()
-        user_name = flask.request.cookies.get('username')
-        session_id = flask.request.cookies.get('session')
+        username: str = flask.request.cookies.get('username')
+        session_id: str = flask.request.cookies.get('session')
+        assert type(username) == str
+        assert type(session_id) is str
+        
+        if username is None and session_id is None:
+            return flask.make_response(flask.jsonify({'message': 'session expired'}), 401)
+
+        query_res = dynamo.get_item(
+            TableName='Session',
+            Key={
+                'session_id': {
+                    'S': session_id
+                },
+                'username': {
+                    'S': username
+                }
+            }
+        )
+
+        print(query_res)
+
         image_data = data['image']
         # remove prefix:image/jpeg;base64, data
         image_data = image_data.split(',')[1]
