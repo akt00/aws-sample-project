@@ -8,6 +8,7 @@ import io
 import numpy as np
 import os
 from PIL import Image
+import re
 from ultralytics import YOLO
 import uuid
 
@@ -20,6 +21,18 @@ def create_app():
     app.static_folder = build_path
     model = YOLO('yolov8n.pt')
     
+    
+    def validate_input(user_input: str) -> bool:
+        """
+        validate user inputs with Regex
+        :param user_input: user input string
+        :return: True if user_input only contians alphanumeric or hyphen, False otherwise
+        """
+        pattern = '[^a-zA-Z0-9-]+'
+        match = re.search(pattern=pattern, string=user_input)
+
+        return True if match is False else False
+
 
     def xywh_to_p1p2(xywh: tuple) -> tuple:
         """
@@ -54,24 +67,25 @@ def create_app():
         dynamo = boto3.client('dynamodb', region_name=aws_region)
         username = str(flask.request.cookies.get('username'))
         session_id = str(flask.request.cookies.get('session'))
-        
-        query_res = dynamo.get_item(
-            TableName='Session',
-            Key={
-                'username': {
-                    'S': username,
-                    },
-                'session_id': {
-                    'S': session_id
-                    },
-            }
-            )
-        
-        if 'Item' in query_res:
-            query_res = query_res['Item']
 
-            if query_res.get('session_id') is not None or query_res.get('username') is not None:
-                return flask.redirect('https://aws-project-akt00.com/content', code=302)
+        if validate_input(username) and validate_input(session_id):
+            query_res = dynamo.get_item(
+                TableName='Session',
+                Key={
+                    'username': {
+                        'S': username,
+                        },
+                    'session_id': {
+                        'S': session_id
+                        },
+                }
+                )
+            
+            if 'Item' in query_res:
+                query_res = query_res['Item']
+
+                if query_res.get('session_id') is not None or query_res.get('username') is not None:
+                    return flask.redirect('https://aws-project-akt00.com/content', code=302)
             
         return flask.send_from_directory(app.static_folder, 'index.html')
     
@@ -89,12 +103,21 @@ def create_app():
 
     @app.route('/login', methods=['POST'])
     def user_login():
+        """
+        /login endpoint for user login
+        1. Valdates user input
+        2. Validate user identiy
+        3. Issue sessoin token, then redirects to the content page
+        """
         dynamo = boto3.client('dynamodb', region_name=aws_region)
 
-        user_data = flask.request.get_json()
+        user_data: dict = flask.request.get_json()
         # print(user_data)
         username = str(user_data['username'])
         password = str(user_data['password'])
+
+        if validate_input(username) is False or validate_input(password) is False:
+            return flask.make_response(flask.jsonify({'message': 'invalid user request'}), 400)
 
         query_res = dynamo.get_item(
             TableName='Users',
@@ -138,12 +161,21 @@ def create_app():
 
     @app.route('/signup', methods=['POST'])
     def user_signup():
+        """
+        HTTP /singpu endpoint for user sign-up
+        1. Validates the user inputs
+        2. Validates the user identity against dynamodb
+        3. Creates the new user identity, then issue the ssession token
+        """
         dynamo = boto3.client('dynamodb', region_name=aws_region)
 
         user_data = flask.request.get_json()
         # print(user_data)
-        username = user_data['username']
-        password = user_data['password']
+        username = str(user_data['username'])
+        password = str(user_data['password'])
+
+        if validate_input(username) is False or validate_input(password) is False:
+            return flask.make_response(flask.jsonify({'message': 'invalid user request'}), 400)
 
         query_res = dynamo.get_item(
             TableName='Users',
@@ -192,17 +224,25 @@ def create_app():
         res = flask.make_response(flask.jsonify({'message': 'OK'}), 200)
         res.set_cookie('username', user_data['username'])
         res.set_cookie('session', sessino_id)
+        
         return res
     
 
     @app.route('/logout', methods=['POST'])
     def user_logout():
+        """
+        HTTP /logout endponit that handles user logout.
+        Removes the userssion registered in the dynamodb
+        """
         dynamo = boto3.client('dynamodb', region_name=aws_region)
 
-        username: str = flask.request.cookies.get('username')
-        session_id: str = flask.request.cookies.get('session')
+        username = str(flask.request.cookies.get('username'))
+        session_id = str(flask.request.cookies.get('session'))
         # print(username, session_id)
 
+        if validate_input(username) is False or validate_input(session_id) is False:
+            return flask.make_response(flask.jsonify({'message': 'invalid user request'}), 400)
+        
         if username is not None and session_id is not None:
             res = dynamo.delete_item(
                 TableName='Session',
@@ -221,6 +261,15 @@ def create_app():
 
     @app.route('/inference', methods=['POST'])
     def inference():
+        """
+        HTTP /inference endpoint that does object detection on user uploaded images
+        1. Validates the user identity
+        2. Receives the image
+        3. Process the image and store it in S3
+        4. Runs the ML model on the image
+        5. Stores the result to the dynamodb
+        6. Returns the result image with bounding boxes to the user
+        """
         s3 = boto3.client('s3')
         s3_bucket = 'aws-sample-project'
         
@@ -229,8 +278,11 @@ def create_app():
         data = flask.request.get_json()
         username: str = flask.request.cookies.get('username')
         session_id: str = flask.request.cookies.get('session')
-        assert type(username) == str
+        assert type(username) is str
         assert type(session_id) is str
+
+        if validate_input(username) is False or validate_input(session_id) is False:
+            return flask.make_response(flask.jsonify({'message': 'invalid user request'}), 400)
         
         if username is None and session_id is None:
             return flask.make_response(flask.jsonify({'message': 'session expired'}), 401)
