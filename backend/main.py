@@ -112,7 +112,7 @@ def create_app():
         image.save(image_io, format='PNG')
         image_io.seek(0)
         image_png = image_io.getvalue()
-        s3.put_object(Body=image_png, bucket=s3_bucket, Key=str(user_name) + str(uuid.uuid4()))
+        s3.put_object(Body=image_png, Bucket=s3_bucket, Key=str(user_name) + str(uuid.uuid4()))
         image_str = base64.b64encode(image_png).decode('utf-8')
         return flask.jsonify({'image': image_str}), 200
     
