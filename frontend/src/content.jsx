@@ -10,6 +10,10 @@ function Content() {
   const picaInstance = pica();
   const navigate = useNavigate();
 
+  useEffect(() => {
+    document.title = 'Inference'
+  }, [])
+
   const handleImageUpload = async (event) => {
     const file = event.target.files[0];
     const reader = new FileReader();

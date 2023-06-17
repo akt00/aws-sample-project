@@ -106,7 +106,7 @@ def create_app():
 
         if 'Item' in query_res:
             query_res = query_res['Item']
-            hashed_pwd: bytearray = str(query_res.get('password')).encode()
+            hashed_pwd: bytearray = query_res.get('password')['S'].encode()
             print('hashed_pwd', hashed_pwd)
             if bcrypt.checkpw(password.encode(), hashed_pwd):
                 session_id = str(uuid.uuid4())
@@ -155,6 +155,7 @@ def create_app():
 
         if 'Item'in query_res:
             username = query_res['Item'].get('username')
+            print(username)
             if username is not None:
                 return flask.make_response(flask.jsonify({'message': 'Sign-up failed'}), 401)
 
