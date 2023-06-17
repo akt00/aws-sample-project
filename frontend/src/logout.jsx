@@ -6,7 +6,8 @@ const LogoutBar = () => {
     const navigate = useNavigate();
 
     const handleLogout = async () => {
-
+        console.log('logging out...')
+        
         const response = await fetch('/logout', {
             method: 'POST',
             credentials: "include",
