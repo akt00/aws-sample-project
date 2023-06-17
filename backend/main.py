@@ -201,6 +201,8 @@ def create_app():
         username = flask.request.cookies.get('username')
         session_id = flask.request.cookies.get('session')
 
+        print(username, session_id)
+
         if username is not None and session_id is not None:
             res = dynamo.delete_item(
                 Key={
