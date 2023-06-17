@@ -10,7 +10,7 @@ A simple web application on AWS that returns the inference result of objecte det
 sudo yum install -y git
 ```
 
-### 2. Clone the repository
+### 2. Clone the repository in /opt directory
 ```rb
 git clone https://github.com/akt00/aws-sample-project.git
 ```
