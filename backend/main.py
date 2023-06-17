@@ -43,17 +43,25 @@ def create_app():
     
     @app.route('/')
     def index():
-        dynamo = boto3.resource('dynamodb', region_name=aws_region)
-        session_table = dynamo.Table('Session')
-
+        # dynamo = boto3.resource('dynamodb', region_name=aws_region)
+        # session_table = dynamo.Table('Session')
+        dynamo = boto3.client('dynamodb', region_name=aws_region)
         user_name = str(flask.request.cookies.get('username'))
         session_id = str(flask.request.cookies.get('session'))
         
-        res = session_table.get_item(
-            Key={'username': user_name}
+        res = dynamo.get_item(
+            TableName='Session',
+            Key={
+                'username': {
+                    'S': user_name,
+                    },
+                'session_id': {
+                    'S': session_id
+                    },
+            }
             )
         
-        if 'Item' in res and session_id == str(res['Item'].get('session_id')):
+        if 'Item' in res:
             return flask.redirect('https://aws-project-akt00.com/content', code=302)
         else:
             return flask.send_from_directory(app.static_folder, 'index.html')
