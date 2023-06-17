@@ -60,8 +60,8 @@ def create_app():
                     },
             }
             )
-        
-        if 'Item' in res:
+        print(type(res["Item"]), res["Item"])
+        if 'Item' in res and res['Item'] != (None, None):
             return flask.redirect('https://aws-project-akt00.com/content', code=302)
         else:
             return flask.send_from_directory(app.static_folder, 'index.html')
