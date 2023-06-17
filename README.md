@@ -32,3 +32,8 @@ export AWS_REGION="us-east-1"
 ```rb
 source init.sh
 ```
+
+### 6. Run the WSGI Flask application with Gunicorn
+```rb
+nohup gunicorn -w 2 -b 0.0.0.0:8080 'main:create_app()' &
+```
