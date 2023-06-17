@@ -31,7 +31,7 @@ def create_app():
         pattern = '[^a-zA-Z0-9-]+'
         match = re.search(pattern=pattern, string=user_input)
 
-        return True if match is False else False
+        return True if match is None else False
 
 
     def xywh_to_p1p2(xywh: tuple) -> tuple:
