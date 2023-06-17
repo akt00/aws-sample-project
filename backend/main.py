@@ -42,7 +42,8 @@ def create_app():
     
     @app.route('/')
     def index():
-        return flask.send_from_directory(app.static_folder, 'index.html')
+        return flask.redirect('https://aws-project-akt00.com/content', code=302) 
+        # return flask.send_from_directory(app.static_folder, 'index.html')
     
     @app.route('/<path:path>')
     def serve_frontend(path):
@@ -68,6 +69,8 @@ def create_app():
     
     @app.route('/signup', methods=['POST'])
     def user_signup():
+        dynamo = boto3.resource('dynamodb', region_name='us-east-1')
+
         user_data = flask.request.get_json()
         # print(user_data)
         user_name = user_data['username']
@@ -82,6 +85,7 @@ def create_app():
     def inference():
         s3 = boto3.client('s3')
         s3_bucket = 'aws-sample-project'
+        
         dynamo = boto3.resource('dynamodb', region_name='us-east-1')
         
 
@@ -91,7 +95,6 @@ def create_app():
         image_data = data['image']
         # remove prefix:image/jpeg;base64, data
         image_data = image_data.split(',')[1]
-
         image_byte = base64.b64decode(image_data)
         image_rgba = Image.open(io.BytesIO(image_byte))
         image = image_rgba.convert('RGB')
@@ -99,9 +102,17 @@ def create_app():
         image_np = np.array(image)
         image_np = cv.cvtColor(image_np, cv.COLOR_RGB2BGR)
 
+        image_io = io.BytesIO()
+        image = Image.fromarray(image_np)
+        image.save(image_io, format='png')
+        image_io.seek(0)
+        image_png = image_io.getvalue()
+
+        s3.put_object(Body=image_png, Bucket=s3_bucket, Key=str(user_name) + str(uuid.uuid4()) + '.png')
+        # inference
         res = model.predict(image_np)
         labels = res[0].boxes.xywh.to('cpu').numpy()
-        print(labels.shape)
+        # print(labels.shape)
         assert labels.ndim == 2
 
         image_np = draw_bbox(image_np, labels)
@@ -112,8 +123,9 @@ def create_app():
         image.save(image_io, format='PNG')
         image_io.seek(0)
         image_png = image_io.getvalue()
-        s3.put_object(Body=image_png, Bucket=s3_bucket, Key=str(user_name) + str(uuid.uuid4()) + '.png')
+
         image_str = base64.b64encode(image_png).decode('utf-8')
+
         return flask.jsonify({'image': image_str}), 200
     
     return app
