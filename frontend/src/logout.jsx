@@ -5,7 +5,18 @@ import { useNavigate } from 'react-router-dom';
 const LogoutBar = () => {
     const navigate = useNavigate();
 
-    const handleLogout = () => {
+    const handleLogout = async () => {
+
+        const response = await fetch('/logout', {
+            method: 'POST',
+            credentials: "include",
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ 'message': 'user logged out' })
+          });
+        
+        console.log(response.status)
 
         var cookies = document.cookie.split(";");
 
@@ -17,6 +28,7 @@ const LogoutBar = () => {
         }
         navigate('/');
     };
+    
 
     return (
         <div className="logout-bar">

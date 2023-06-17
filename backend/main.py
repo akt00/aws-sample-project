@@ -107,7 +107,7 @@ def create_app():
         if 'Item' in query_res:
             query_res = query_res['Item']
             hashed_pwd: bytearray = query_res.get('password')['S'].encode()
-            print('hashed_pwd', hashed_pwd)
+            # print('hashed_pwd', hashed_pwd)
             if bcrypt.checkpw(password.encode(), hashed_pwd):
                 session_id = str(uuid.uuid4())
 
@@ -155,7 +155,7 @@ def create_app():
 
         if 'Item'in query_res:
             username = query_res['Item'].get('username')
-            print(username)
+            # print(username)
             if username is not None:
                 return flask.make_response(flask.jsonify({'message': 'Sign-up failed'}), 401)
 
@@ -193,6 +193,28 @@ def create_app():
         res.set_cookie('session', sessino_id)
         return res
     
+
+    @app.route('/logout', methods=['POST'])
+    def user_logout():
+        dynamo = boto3.client('dynamodb', region_name=aws_region)
+
+        username = flask.request.cookies.get('username')
+        session_id = flask.request.cookies.get('session')
+
+        if username is not None and session_id is not None:
+            res = dynamo.delete_item(
+                Key={
+                    'session_id': {
+                        'S': session_id
+                    },
+                    'username': {
+                        'S': username
+                    },
+                }
+            )
+        
+        return flask.make_response(flask.jsonify({'message': 'OK'}), 200)
+
 
     @app.route('/inference', methods=['POST'])
     def inference():
