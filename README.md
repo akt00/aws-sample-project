@@ -1,6 +1,9 @@
 # aws-sample-project
 
-## How to set up the web server.
+## Application Summary
+A simple web application on AWS that returns the inference result of objecte detection on the image uploaded by the user. Users must sing up or log in to use the application.
+
+## How to set up the web server
 
 ### 1. Install Git
 ```rb
