@@ -18,6 +18,7 @@ def create_app():
     app.static_folder = build_path
     model = YOLO('yolov8n.pt')
     
+    
     def xywh_to_p1p2(xywh: tuple) -> tuple:
         """
         :param xywh: un-normalized coords and length of xywh
@@ -28,6 +29,7 @@ def create_app():
         p2 = (int(x+w/2), int(y+h/2))
         return p1, p2
     
+
     def draw_bbox(img: np.ndarray, labels: np.ndarray) -> np.ndarray:
         """
         draws bouding boxes based on the inference result of the YOLO model
@@ -41,6 +43,7 @@ def create_app():
         
         return img
     
+
     @app.route('/')
     def index():
         # dynamo = boto3.resource('dynamodb', region_name=aws_region)
@@ -60,14 +63,16 @@ def create_app():
                     },
             }
             )
-        print(res)
-        if 'Item' in res and res['Item'] != (None, None):
-            print(type(res['Item']))
-            print(res['Item'])
-            return flask.redirect('https://aws-project-akt00.com/content', code=302)
+        if 'Item' in res:
+            res = res['Item']
+            if res.get('session_id') is None or res.get('username') is None:
+                return flask.send_from_directory(app.static_folder, 'index.html')
+            else:
+                return flask.redirect('https://aws-project-akt00.com/content', code=302)
         else:
             return flask.send_from_directory(app.static_folder, 'index.html')
     
+
     @app.route('/<path:path>')
     def serve_frontend(path):
         user_name = flask.request.cookies.get('username')
