@@ -264,7 +264,6 @@ def create_app():
         image = image_rgba.convert('RGB')
 
         image_np = np.array(image)
-        image_np = cv.cvtColor(image_np, cv.COLOR_RGB2BGR)
 
         image_io = io.BytesIO()
         image = Image.fromarray(image_np)
@@ -274,6 +273,8 @@ def create_app():
 
         object_path = username + str(uuid.uuid4()) + '.png'
         _ = s3.put_object(Body=image_png, Bucket=s3_bucket, Key=object_path)
+        
+        image_np = cv.cvtColor(image_np, cv.COLOR_RGB2BGR)
         # inference
         res = model.predict(image_np)
         labels = res[0].boxes.xywh.to('cpu').numpy()
