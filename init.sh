@@ -10,7 +10,7 @@ if [$? -ne 0]; then
     exit 1
 fi
 
-sudo yum install mesa-libGL
+sudo yum install -y mesa-libGL
 
 if [$? -ne 0]; then
     exit 1
