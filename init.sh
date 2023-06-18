@@ -58,6 +58,12 @@ if [$? -ne 0]; then
     exit 1
 fi
 
+python3 -m pip install --upgrade pip
+
+if [$? -ne 0]; then
+    exit 1
+fi
+
 pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
 
 if [$? -ne 0]; then
