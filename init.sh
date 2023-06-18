@@ -10,6 +10,24 @@ if [$? -ne 0]; then
     exit 1
 fi
 
+cd /opt/aws-sample-project/frontend
+
+if [$? -ne 0]; then
+    exit 1
+fi
+
+sudo npm install
+
+if [$? -ne 0]; then
+    exit 1
+fi
+
+sudo npm run build
+
+if [$? -ne 0]; then
+    exit 1
+fi
+
 cd /opt/aws-sample-project
 
 if [$? -ne 0]; then
@@ -22,7 +40,7 @@ if [$? -ne 0]; then
     exit 1
 fi
 
-cd venv/bin
+cd /opt/aws-sample-project/venv/bin
 
 if [$? -ne 0]; then
     exit 1
@@ -34,40 +52,15 @@ if [$? -ne 0]; then
     exit 1
 fi
 
-cd /opt/aws-sample-project/frontend
+sudo pip3 install torch torchvision --index-url https://download.pytorch.org/whl/cpu
 
 if [$? -ne 0]; then
     exit 1
 fi
 
-npm install
+sudo pip3 install bcrypt boto3 opencv-python Flask gunicorn ultralytics
 
 if [$? -ne 0]; then
     exit 1
 fi
 
-npm run build
-
-if [$? -ne 0]; then
-    exit 1
-fi
-
-python3 -m pip install --upgrade pip
-
-if [$? -ne 0]; then
-    exit 1
-fi
-
-pip3 install torch torchvision --index-url https://download.pytorch.org/whl/cpu
-
-if [$? -ne 0]; then
-    exit 1
-fi
-
-pip3 install bcrypt boto3 opencv-python Flask gunicorn ultralytics
-
-if [$? -ne 0]; then
-    exit 1
-fi
-
-cd /opt/aws-sample-project/
