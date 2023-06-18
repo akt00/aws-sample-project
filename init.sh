@@ -40,7 +40,7 @@ if [$? -ne 0]; then
     exit 1
 fi
 
-sudo python3 -m venv venv
+python3 -m venv venv
 
 if [$? -ne 0]; then
     exit 1
@@ -58,15 +58,14 @@ if [$? -ne 0]; then
     exit 1
 fi
 
-sudo pip3 install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
 
 if [$? -ne 0]; then
     exit 1
 fi
 
-sudo pip3 install bcrypt boto3 opencv-python Flask gunicorn ultralytics
+pip install bcrypt boto3 opencv-python Flask gunicorn ultralytics
 
 if [$? -ne 0]; then
     exit 1
 fi
-
