@@ -1,3 +1,5 @@
+#!/bin/bash
+
 sudo yum install -y nodejs
 
 if [$? -ne 0]; then
