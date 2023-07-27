@@ -1,9 +1,10 @@
 # aws-sample-project
 
-![Architecture](/docs/architecture_diagram.jpg)
-
 ## Application Summary
 A simple web application on AWS that returns the inference result of objecte detection on the image uploaded by the user. Users must sing up or log in to use the application.
+
+## Architecture Summary
+![Architecture](/docs/architecture_diagram.jpg)
 
 ## How to set up the web server
 
